@@ -11,16 +11,49 @@ const {
   excluirUsuario
 } = require("../controllers/usuarioController");
 
+const authMiddleware = require("../middlewares/authMiddleware");
+const adminMiddleware = require("../middlewares/adminMiddleware");
+
+
+// CADASTRO PÚBLICO
 router.post("/", criarUsuario);
 
-router.get("/", listarUsuarios);
 
-router.get("/:id", buscarUsuarioPorId);
+// ROTAS ADMINISTRATIVAS
+router.get(
+  "/",
+  authMiddleware,
+  adminMiddleware,
+  listarUsuarios
+);
 
-router.put("/:id", atualizarUsuario);
+router.get(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  buscarUsuarioPorId
+);
 
-router.patch("/:id/status", alterarStatusUsuario);
+router.put(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  atualizarUsuario
+);
 
-router.delete("/:id", excluirUsuario);
+router.patch(
+  "/:id/status",
+  authMiddleware,
+  adminMiddleware,
+  alterarStatusUsuario
+);
+
+router.delete(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  excluirUsuario
+);
+
 
 module.exports = router;
