@@ -1,5 +1,7 @@
+
 const pool = require("../config/database");
 
+// LISTAR TAREFAS
 async function listarTarefas(req, res) {
   try {
     const resultado = await pool.query(
@@ -34,6 +36,7 @@ async function listarTarefas(req, res) {
   }
 }
 
+// CRIAR TAREFA
 async function criarTarefa(req, res) {
   try {
     const {
@@ -90,16 +93,77 @@ async function criarTarefa(req, res) {
   }
 }
 
+// EDITAR TAREFA
+async function editarTarefa(req, res) {
+  try {
+    const {
+      nome_tarefa,
+      descricao_tarefa,
+      data_tarefa,
+      horario_tarefa
+    } = req.body;
+
+    if (!nome_tarefa || !data_tarefa) {
+      return res.status(400).json({
+        mensagem: "Nome e data da tarefa são obrigatórios."
+      });
+    }
+
+    const resultado = await pool.query(
+      `
+      UPDATE tarefa
+      SET
+        nome_tarefa = $1,
+        descricao_tarefa = $2,
+        data_tarefa = $3,
+        horario_tarefa = $4
+      WHERE id_tarefa = $5
+        AND id_cliente = $6
+      RETURNING
+        id_tarefa,
+        nome_tarefa,
+        descricao_tarefa,
+        data_tarefa,
+        horario_tarefa,
+        status_tarefa
+      `,
+      [
+        nome_tarefa.trim(),
+        descricao_tarefa?.trim() || null,
+        data_tarefa,
+        horario_tarefa || null,
+        req.params.id,
+        req.usuario.id_usuario
+      ]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({
+        mensagem: "Tarefa não encontrada."
+      });
+    }
+
+    return res.status(200).json({
+      mensagem: "Tarefa atualizada com sucesso.",
+      tarefa: resultado.rows[0]
+    });
+
+  } catch (error) {
+    console.error("Erro ao editar tarefa:", error);
+
+    return res.status(500).json({
+      mensagem: "Erro interno ao editar tarefa."
+    });
+  }
+}
+
+// ATUALIZAR STATUS
 async function atualizarStatusTarefa(req, res) {
   try {
     const { status_tarefa } = req.body;
 
     if (
-      ![
-        "PENDENTE",
-        "CONCLUIDA",
-        "CANCELADA"
-      ].includes(status_tarefa)
+      !["PENDENTE", "CONCLUIDA", "CANCELADA"].includes(status_tarefa)
     ) {
       return res.status(400).json({
         mensagem: "Status de tarefa inválido."
@@ -146,6 +210,7 @@ async function atualizarStatusTarefa(req, res) {
   }
 }
 
+// EXCLUIR TAREFA
 async function excluirTarefa(req, res) {
   try {
     const resultado = await pool.query(
@@ -180,9 +245,11 @@ async function excluirTarefa(req, res) {
   }
 }
 
+// EXPORTAR FUNÇÕES
 module.exports = {
   listarTarefas,
   criarTarefa,
+  editarTarefa,
   atualizarStatusTarefa,
   excluirTarefa
 };
